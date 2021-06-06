@@ -7,7 +7,7 @@ client = MongoClient()
 database = client.v34
 v34 = database.v34
 for x in v34.find( {} ).sort([('_id', ASCENDING)]):
-    f.write(str(x['_id']) + '__' + x['headline'] + '. ' +  x['text'] + ';\n')
+    f.write(x['text'])
     
 url = 'https://riac34.ru/news/131134'
 response = requests.get(url)
@@ -36,6 +36,6 @@ for i in range(0, len(headlines)):
     if v34.find_one({'headline': headline}) is None:
         if v34.find_one({'site': site}) is None:
             if v34.find_one({'time': newsTime}) is None:
-                v34.insertone(news)
+                v34.insert_one(v34_)
     else:
         print('lol')
