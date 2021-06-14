@@ -1,0 +1,44 @@
+import requests, pymongo
+from bs4 import BeautifulSoup
+from pymongo import MongoClient, ASCENDING, DESCENDING
+
+f = open('input.txt', 'w')
+client = MongoClient()
+database = client.v34
+v34 = database.v34
+for x in v34.find( {} ).sort([('_id', ASCENDING)]):
+    f.write(x['text'])
+    
+for j in range(1, 100):  
+    url = 'https://riac34.ru/news/' + '131323?PAGEN_1=' + str(j)
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, 'lxml')
+    bigline = soup.find('div', class_='inner-new-content')
+    headlines = bigline.find_all('a', class_='caption')
+    newsTimes = bigline.find_all('span', class_='date')
+
+    
+    for i in range(0, len(headlines)):
+        headline = headlines[i].text #1 заголовок
+        site = "https://riac34.ru/" + headlines[i].get('href') #2 ссылка
+        responseT = requests.get(site)
+        soupT = BeautifulSoup(responseT.text, 'lxml')
+        biglineT = soupT.find('div', class_='full-text')
+        if biglineT is not None:
+            newsLine = biglineT.text
+            newsLine = newsLine.replace('\n', "") #3 текст новости
+            newsTime = newsTimes[i].text #4   датf   
+            v34_ = {
+            "headline":headline,
+            "text":newsLine,
+            "site":site,
+            "time":newsTime,
+            }
+    
+        if v34.find_one({'headline': headline}) is None:
+            if v34.find_one({'site': site}) is None:
+                if v34.find_one({'time': newsTime}) is None:
+                    v34.insert_one(v34_)
+        else:
+            print('lol', j, site )
+            
