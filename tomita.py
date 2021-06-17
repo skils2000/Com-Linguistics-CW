@@ -1,18 +1,32 @@
+import pymongo, os
 from pymongo import MongoClient, ASCENDING, DESCENDING
 
 client = MongoClient()
 database = client.v34
 v34 = database.v34
-tomita = database.tomita
+database.tomitav34.drop
+tomitav34 = database.tomitav34
+os.system('cd /home/vagrant/tomita-parser/build/bin/')
 
-f = open('output.txt', 'r')
-prevLine = "1"
-for line in f:
-    if line.find('Polit') >= 0:
-        tomita_ = {
-        "textTomita": prevLine
-        }
-        tomita.insert_one(tomita_)
-    else:
-        print('not Tomita')
-    prevLine = line
+for x in v34.find( {} ).sort([('_id', ASCENDING)]):
+    finput = open('input.txt', 'w')
+    finput.write(x['text'])
+    finput.close()
+    
+    os.system('./tomita-parser config.proto')
+    
+    foutput = open('output.txt', 'r').readlines()
+        
+    for j in range(len(foutput)):
+        if foutput[j].find('Polit') > -1:
+            if len(foutput[j-1]) > 10:
+                tomitav34_ = {
+                "text": foutput[j-1],
+                "name": foutput[j+2][12:]
+                }
+                tomitav34.insert_one(tomitav34_)
+
+f = open('database.txt', 'w')
+for x in tomitav34.find( {} ).sort([('_id', ASCENDING)]):
+    f.write(x['name'])
+f.close()
