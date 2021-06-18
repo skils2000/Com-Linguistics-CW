@@ -4,17 +4,30 @@ from pyspark.ml.feature import StopWordsRemover
 from pyspark.ml.feature import CountVectorizer
 from pyspark.ml.feature import IDF
 from pyspark.ml.feature import Word2Vec
+from nltk.corpus import stopwords
+from pymorphy2 import MorphAnalyzer
+import re, string, datetime, pymorphy2
+
+def remove_punctuation(text):
+
+    return text.translate(str.maketrans('', '', string.punctuation)).lower()
+    
+def remove_linebreaks(text): 
+
+    return text.strip()
 
 spark = SparkSession\
     .builder\
     .appName("SimpleApplication")\
     .getOrCreate()
 
+
 # Построчная загрузка файла в RDD
 input_file = spark.sparkContext.textFile('/home/vagrant/spark_app/Samples/input.txt')
 
 print(input_file.collect())
-prepared = input_file.map(lambda x: ([x]))
+prepared = input_file.map(lambda x: (remove_punctuation(x))).map(lambda x: (remove_linebreaks(x)))
+prepared = prepared.map(lambda x: ([x]))
 df = prepared.toDF()
 prepared_df = df.selectExpr('_1 as text')
 
@@ -72,26 +85,31 @@ model = word2Vec.fit(words)
 w2v_df = model.transform(words)
 w2v_df.show()
 
+
+
 f = open('database.txt', 'r')
 for line in f:
     #Ввод слова
     words = line.replace("\n", "")
     words = words.replace(" ", "_")
-    words = words.lower().split("_")
-    for word in words:
+    words = words.lower()
+    word = words.split("_")
+    
     #Проверка на вхождение
-        intext=False
-        for list in rescaled_data.select('filtered').collect():
-            if list[0].count(word)!=0:intext=True
+    intext=False
+    for list in rescaled_data.select('filtered').collect():
+        if list[0].count(word[0])!=0:intext=True
     #Вывод
-        if intext:
-            print(word)
-            synonyms = model.findSynonyms(word, 5)
-            synonyms.show()
-        else:
-            print("hello.")
-        print("\n\n\n\n\nEND")
+    if intext:
+        print(words)
+        synonyms = model.findSynonyms(word[0], 5)
+        synonyms.show()
+    else:
+        print(words)
+        print("hello.")
+    print("\n\n\n\n\nEND")
 f.close()
+
 
 
 spark.stop()
